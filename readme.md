@@ -2,7 +2,13 @@
 
 ## dParser
 
-- 关系解析
+- 关系解析: 基于ddparser进行了改写和重构，可以自定义行业领域词。
+
+- 版本依赖：
+    - paddlepaddle: >=2.0 (pip install paddlepaddle )
+    - lac: >=2.1 (pip install lac )
+
+
 
 - 使用：
 
@@ -42,5 +48,6 @@ for x in out:
  --- ('餐厅', '为', '木餐桌')
  --- ('红', '木餐桌')
 
-
 ~~~
+
+
