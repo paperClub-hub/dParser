@@ -3,9 +3,29 @@
 ## dParser
 
 - 关系解析
+
+- 使用：
+
+~~~
+from dparser import DDParser
+from dparser.dextract import *
+
+text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。'
+
+ddp_res = ddp.parse(text)
+fine_info = FineGrainedInfo(ddp_res[0])
+out = [tuple(filter(lambda i:i !=None, x[:-1][0])) for x in fine_info.parse()]
+
+
+print(f"输入：{text}")
+print("解析结果：")
+for x in out:
+    print(f" --- {x}")
 ~~~
 
-####################################################################################################
+- 示例：
+~~~
+
 输入：三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。
 
 解析结果：
