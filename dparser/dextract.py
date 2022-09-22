@@ -7,13 +7,9 @@
 
 
 """
-dparser关系抽提
+dparser 关系抽提
 """
 
-# import sys
-# sys.path.append('../')
-# # from dparser import DDParser
-# # ddp = DDParser()
 
 
 class Node:
@@ -29,7 +25,7 @@ class Node:
 
 
 class Tree(object):
-    """Tree Class"""
+    """ 创建关系树 """
     def __init__(self, ddp_res):
         self.words = ddp_res['word']
         self.heads = ddp_res['head']
@@ -40,20 +36,20 @@ class Tree(object):
         self.bei = ["被"]
 
     def build_tree(self):
-        """Build the tree"""
+        """ 构建关系 """
         self.nodes = []
         for index, (word, head, deprel) in enumerate(zip(self.words, self.heads, self.deprels)):
             node = Node(index, word, head, deprel)
             self.nodes.append(node)
         # set root
-        self.root = self.nodes[self.heads.index(0)]
+        self.root = self.nodes[self.heads.index(0)] # 中心词
         for node in self.nodes:
             if node.parent == -1:
                 continue
-            self.add(self.nodes[node.parent], node)
+            self.add(self.nodes[node.parent], node) # 起点在左侧的关系元组
 
     def add(self, parent: Node, child: Node):
-        """Add a child node"""
+        """ 添加节点 """
         if parent.id is None or child.id is None:
             raise IndexError("id is None")
         if parent.id < child.id:
@@ -750,6 +746,7 @@ class CoarseGrainedInfo(Tree):
         return outputs
 
 
+
 if __name__ == '__main__':
 
     text = '我家客厅要装修成后现代风格的，88平米， 预算大概是4w+人民币。朋友家的卧室是北欧风格的，也差不多花了4w， 17平米。'
@@ -759,5 +756,5 @@ if __name__ == '__main__':
 
     fine_info = FineGrainedInfo(ddp_res[0])
     print("细粒度：", fine_info.parse())
-    coarse_info = CoarseGrainedInfo(ddp_res[0])
-    print("粗粒度：", coarse_info.parse())
+    # coarse_info = CoarseGrainedInfo(ddp_res[0])
+    # print("粗粒度：", coarse_info.parse())

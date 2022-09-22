@@ -5,6 +5,7 @@
 布置图
 布局图
 细节图
+干湿分离
 未来风/STYLE
 好莱坞摄政风/STYLE
 北欧风格/STYLE
@@ -329,6 +330,10 @@ loft/PROPTY
 木桌/OBJECT
 木凳/OBJECT
 木餐桌/OBJECT
+红木餐桌/OBJECT
+红木椅/OBJECT
+红木桌/OBJECT
+红木凳/OBJECT
 水晶吊灯/OBJECT
 皮质沙发/OBJECT
 皮沙发/OBJECT
