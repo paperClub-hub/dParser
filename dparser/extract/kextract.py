@@ -25,8 +25,8 @@ class wordExtract():
     """ 关键词提取及词类型获取"""
 
     def __init__(self):
-        self.dict_path = self._get_abs_path("model_files/custom_dict2.txt")
-        self.jieba_path = self._get_abs_path("model_files/jieba_dict.txt")
+        self.dict_path = self._get_abs_path("../model_files/custom_dict2.txt")
+        self.jieba_path = self._get_abs_path("../model_files/jieba_dict.txt")
         self.DICT = self._load_custom_dict()
         if self.DICT: self.save_dict()
         if os.path.exists(self.jieba_path): jieba.load_userdict(str(self.jieba_path))
@@ -50,9 +50,9 @@ class wordExtract():
 
     def _load_stopwords(self):
         try:
-            # print("加载停止词... ")
+            print("加载停止词... ")
             stopwords = set()
-            dir = self._get_abs_path("model_files/stopwords")
+            dir = self._get_abs_path("../model_files/stopwords")
             for sp in ['baidu_stopwords.txt', 'cn_stopwords.txt', \
                        'hit_stopwords.txt', 'scu_stopwords.txt']:
                 with open(os.path.join(dir, sp), 'r') as f:
@@ -120,7 +120,8 @@ class wordExtract():
 
 if __name__ == '__main__':
     text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅有L形沙发，厨房干湿分离，餐厅为红木餐桌。'
-    we = wordExtract()
-    types, ws = we.matched(text)
+    kwe = wordExtract()
+    types, ws = kwe.matched(text)
     print(types)
+    print(kwe.stopwords)
 

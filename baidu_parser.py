@@ -5,21 +5,22 @@
 # @Author   : NING MEI
 # @Desc     :
 
-import os
-import json
 from dparser import DDParser
-from dparser.dextract import *
-from dparser.kextract import *
+from dparser.extract.dextract import *
+from dparser.extract.kextract import *
+from dparser.extract.uie_task import *
+from dparser.utils import util
 
 
-ddp = DDParser(prob=True)
-wse = wordExtract()
+ddp = DDParser()
+kwe = wordExtract()
+uie = UIE()
 
 def do_dextract(text, useFine=True):
     """ """
     ddp_res = ddp.parse(text)
     res_info = FineGrainedInfo(ddp_res[0]).parse() if useFine else CoarseGrainedInfo(ddp_res[0]).parse()
-    
+
     del ddp_res
     # print(res_info)
 
@@ -28,14 +29,23 @@ def do_dextract(text, useFine=True):
 
 
 if __name__ == '__main__':
-    text = '我家客厅要装修成后现代风格的，88平米， 预算大概是4w+人民币。朋友家的卧室是北欧风格的，也差不多花了4w， 17平米。'
-    text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。'
+    text = '我计划装修房子，总面积108m², 套内88平米，预算40w+, 想装修成现代简约风格，客厅放L形沙发和玻璃茶几，方便会客，餐厅配置红木餐桌椅和水晶吊灯 。'
+    # text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。'
     # text = '卫生间满足我们的需求做了三分离设计，在早上的使用高峰期或者多人使用起来更加方便。'
 
-    cats, ws = wse.matched(text)
+    kwe_cat, ws = kwe.matched(text)
+    print(kwe_cat, ws)
     res_info = do_dextract(text, True)
     print(res_info)
-    print(cats, ws)
+
+    _, base_res = uie.extract(text)
+    uie_cat = [list(x.keys()) for x in base_res][0]
+    task_schema = util.task_setting(kwe_cat, uie_cat)
+    print(base_res)
+    print(task_schema)
+    _, task_res = uie.extract(text, task_schema)
+    print(task_res)
+    util.network(task_res)
 
     
     

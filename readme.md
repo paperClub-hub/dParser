@@ -7,6 +7,7 @@
 - 版本依赖：
     - paddlepaddle: >=2.0 (pip install paddlepaddle )
     - lac: >=2.1 (pip install lac )
+    - networkx
 
 
 
