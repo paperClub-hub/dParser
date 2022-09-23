@@ -9,13 +9,8 @@
 import os
 from typing import List
 from collections import defaultdict
-
 from paddlenlp import Taskflow
-from dparser.utils import util
-import matplotlib.pyplot as plt
-plt.rcParams['font.sans-serif'] = ['SimHei']
-plt.rcParams['axes.unicode_minus'] = False
-
+from dparser.utils.util import BASE_SCHEMA
 import  warnings
 warnings.filterwarnings('ignore')
 
@@ -25,11 +20,10 @@ warnings.filterwarnings('ignore')
 class UIE():
     """ 信息抽提 """
     def __init__(self):
-
         checkpoint = self._get_abs_path("../model_files/uie_checkpoint/best_f1_0.6854")
-        base_schema = ['户型布局', '场所类', '局部', '风格类', '抽象风格', '家具物体', '组分', '色彩', '术语', '外形', '品牌']
-        self.based_schema = base_schema
-        self.model = Taskflow(task='information_extraction', task_path=checkpoint, schema=base_schema, position_prob=0.95)
+        self.based_schema = BASE_SCHEMA
+        self.model = Taskflow(task='information_extraction', task_path=checkpoint, schema=self.based_schema, position_prob=0.95)
+
 
     def _get_abs_path(self, path):
         return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), path))
@@ -71,6 +65,8 @@ class UIE():
 
         if task_schema:
             self.model.set_schema(task_schema)
+        else:
+            self.model.set_schema(self.based_schema)
 
         task_res = self.model(text)
 

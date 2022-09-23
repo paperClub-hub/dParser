@@ -30,14 +30,14 @@ def do_dextract(text, useFine=True):
 
 if __name__ == '__main__':
     text = '我计划装修房子，总面积108m², 套内88平米，预算40w+, 想装修成现代简约风格，客厅放L形沙发和玻璃茶几，方便会客，餐厅配置红木餐桌椅和水晶吊灯 。'
-    # text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。'
-    # text = '卫生间满足我们的需求做了三分离设计，在早上的使用高峰期或者多人使用起来更加方便。'
+    text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅放L形沙发，厨房干湿分离，餐厅为红木餐桌。'
+    text = '卫生间满足我们的需求做了三分离设计，在早上的使用高峰期或者多人使用起来更加方便。'
 
     kwe_cat, ws = kwe.matched(text)
     print(kwe_cat, ws)
     res_info = do_dextract(text, True)
     print(res_info)
-
+    
     _, base_res = uie.extract(text)
     uie_cat = [list(x.keys()) for x in base_res][0]
     task_schema = util.task_setting(kwe_cat, uie_cat)
@@ -46,6 +46,7 @@ if __name__ == '__main__':
     _, task_res = uie.extract(text, task_schema)
     print(task_res)
     util.network(task_res)
+
 
     
     

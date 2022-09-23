@@ -14,7 +14,10 @@ from collections import defaultdict
 
 
 
-# uie 提取schema处理规则：
+# 初始schema
+BASE_SCHEMA = ['户型布局', '场所类', '局部', '风格类', '抽象风格', '家具物体', '组分', '色彩', '术语', '外形', '品牌']
+
+# schema配对规则：
 Rules = [['户型类','风格类'], ['户型类','抽象风格'], ['户型类','场所类'], ['户型类','面积'],['户型类', '费用'], ['户型类','长'],['户型类','宽'], ['户型类','高'], \
           ['户型类','色彩'], ['户型类','外形'], ['户型类', '属性'],['户型类', '局部'],['户型类','空间'],['户型类','属性'], # 户型类
           ['场所类','风格类'], ['场所类','抽象风格'], ['场所类','面积'], ['场所类','费用'], ['场所类','长'], ['场所类','宽'], ['场所类','高'], ['场所类','色彩'],\
@@ -25,11 +28,21 @@ Rules = [['户型类','风格类'], ['户型类','抽象风格'], ['户型类','
         ]
 
 
-def task_setting(kwe_cat:List, uie_cat:List):
-    """ 组合 schema: 根据词类型进行组合和筛选, 构建多任务 uie-sechma
+
+def task_setting(kwe_cat:List, uie_cat:List, scheduler:int=1):
+    """ 信息抽提schema配置: 根据词类型进行组合和筛选, 构建多任务 uie-sechma
     """
 
-    def _reg(rule):
+    def _diff(st: List, types: List, inter=False):
+        """ inter=True 获取 types列表中， 存在st的元素; inter=False, 获取 types列表中， 不在st的元素
+         """
+        if inter:
+            return list(set(types).intersection(set(st)))
+        else:
+            return list(set(types).difference(set(st)))
+
+
+    def _legalizer(rule):
         """ 规则筛选 """
         a, b, cdt1, cdt2 = rule[0], rule[1], rule[2], rule[3]
         if (a == cdt1 and b == cdt2) or (b == cdt1 and a == cdt2):
@@ -37,29 +50,90 @@ def task_setting(kwe_cat:List, uie_cat:List):
         else:
             return False
 
-    task_schema = []
-    all_cats = set()
-    all_cats.update(kwe_cat)
-    all_cats.update(uie_cat)
-    all_cats = list(all_cats)
-    # 替换 ’数量词‘
-    if (any(x in all_cats for x in ['费用', '面积', '长', '宽', '高', '深'])) and '数量' in all_cats:
-        all_cats = list(filter(lambda x: x != '数量', all_cats))
 
+    def _scheduler3(all_cats):
+        task_schema = []
+        if all(x in all_cats for x in ['户型布局', '场所类', '家具物体', '风格类']):
+            others = _diff(['户型布局', '场所类', '家具物体', '风格类'], all_cats)
+            others = others if others else ['属性']
+            task_schema = [{'户型布局':'场所类'}, {'场所类': ['风格', '家具物体'] + others}, {'场所类': ['物体', '风格'] + others},
+                           {'家具物体': ['风格']+others}, {"户型布局": others}]
 
-    refence = ['户型布局', '场所类', '局部', '家具物体', '风格类', '抽象风格', '组分', '色彩', '术语', '外形', '品牌', \
-              '数量', '长', '宽', '高', '深', '品牌','纹理']
+        elif all(x in all_cats for x in ['场所类', '家具物体', '风格类']):
+            others = _diff(['场所类', '家具物体', '风格类'], all_cats)
+            others = others if others else ['属性']
+            task_schema = [{'场所类':['风格', '物体']+others}, {'场所类': ['家具物体','风格']+others}, {'家具物体':others}]
 
-    all_cats = [x for x in refence if x in all_cats] ## 和 refence 顺序保持一致
-    for i, c1 in enumerate(all_cats):
-        for c2 in all_cats[i + 1:]:
-            items = [[c1, c2] + r for r in Rules]
-            for item in items:
-                rls = _reg(item)
-                rls = True
-                if rls:
+        elif all(x in all_cats for x in ['局部', '家具物体', '风格类']):
+            others = _diff(['局部', '家具物体', '风格类'], all_cats)
+            others = others if others else ['属性']
+            task_schema = [{'局部': ['风格', '物体'] + others}, {'局部': ['家具物体', '风格'] + others}, {'家具物体': others}]
+
+        elif all(x in all_cats for x in ['家具物体', '风格类']):
+            others = _diff(['家具物体', '风格类'], all_cats)
+            others = others if others else ['属性']
+            task_schema = [{'家具物体': ['风格'] + others}, {'家具物体': others}]
+
+        else:
+            for i, c1 in enumerate(all_cats):
+                for c2 in all_cats[i + 1:]:
+                    if c1 == '风格类': continue
                     if {c1: c2} not in task_schema: task_schema.append({c1: c2})
 
+        return task_schema
+
+
+    def _scheduler2(all_cats):
+        task_schema = []
+        for i, c1 in enumerate(all_cats):
+            for c2 in all_cats[i + 1:]:
+                if c1 == '风格类': continue
+                items = [[c1, c2] + r for r in Rules]
+                for item in items:
+                    rls = _legalizer(item)
+                    if rls:
+                        if {c1: c2} not in task_schema: task_schema.append({c1: c2})
+
+        return task_schema
+
+
+    def _scheduler1(all_cats):
+        task_schema = []
+        for i, c1 in enumerate(all_cats):
+            for c2 in all_cats[i + 1:]:
+                if c1 == '风格类': continue
+                if {c1: c2} not in task_schema: task_schema.append({c1: c2})
+
+        return task_schema
+
+
+    def _category(kwe_cat: List, uie_cat:List) -> List:
+        """ 生成组词类别列表 """
+        all_cats = set()
+        all_cats.update(kwe_cat)
+        all_cats.update(uie_cat)
+        all_cats = list(all_cats)
+
+        if (any(x in all_cats for x in ['费用', '面积', '长', '宽', '高', '深'])) and '数量' in all_cats:
+            all_cats = list(filter(lambda x: x != '数量', all_cats))
+
+        Refence = ['户型布局', '场所类', '局部', '家具物体', '风格类', '抽象风格', '组分', '色彩', '术语', '外形', '品牌',
+                   '数量', '长', '宽', '高', '深', '品牌', '纹理']
+        all_cats = [x for x in Refence if x in all_cats]
+
+        return all_cats
+
+    # scheduler配置
+    all_cats = _category(kwe_cat, uie_cat)
+    if scheduler == 1:
+        task_schema = _scheduler1(all_cats)
+    elif scheduler == 2:
+        task_schema = _scheduler2(all_cats)
+    elif scheduler == 3:
+        task_schema = _scheduler3(all_cats)
+    else:
+        print(f"scheduler should be in [1,2,3], you {scheduler} is invalid, and will be set to BASE_SCHEMA. ")
+        task_schema = BASE_SCHEMA
 
     return task_schema
 
@@ -86,7 +160,6 @@ def network(res, addlabel=True, add_relation_node=True):
             relations = d.get('relations')
             if relations:
                 for rk, rvs in relations.items():
-
                     if add_relation_node:  ## 添加关系节点
                         G.add_node(rk)
                         G.add_edge(dk, rk)
@@ -126,4 +199,4 @@ if __name__ == '__main__':
     res = [{'场所类': [{'text': '卧室', 'start': 38, 'end': 40, 'probability': 0.9998853236667564, 'relations': {'风格': [{'text': '北欧风格', 'start': 41, 'end': 45, 'probability': 0.9999401577978233}], '面积': [{'text': '17平米', 'start': 57, 'end': 61, 'probability': 0.9999713303643176}], '大小': [{'text': '17平米', 'start': 57, 'end': 61, 'probability': 0.9999157803836596}]}}, {'text': '客厅', 'start': 2, 'end': 4, 'probability': 0.9999797345232224, 'relations': {'风格': [{'text': '现代简约风格', 'start': 8, 'end': 14, 'probability': 0.999971926399553}], '面积': [{'text': '88平米', 'start': 16, 'end': 20, 'probability': 0.99998301272813}], '大小': [{'text': '88平米', 'start': 16, 'end': 20, 'probability': 0.9999834895663042}]}}]}]
     res = [{'面积': [{'text': '108m²', 'probability': 0.9998678002081824}], '外形': [{'text': 'L形', 'probability': 0.9999839068034646, 'relations': {'场所类': [{'text': '客厅', 'probability': 0.9999819994767165}]}}], '费用': [{'text': '40w+', 'probability': 0.9999777079867336}], '场所类': [{'text': '客厅', 'probability': 0.9999849200795907, 'relations': {'风格类': [{'text': '现代简约风格', 'probability': 0.999899626873411}]}}, {'text': '餐厅', 'probability': 0.9999837279972041, 'relations': {'风格类': [{'text': '现代简约风格', 'probability': 0.9998426458833158}]}}]}]
 
-    network(res, addlabel=True, add_relation_node=False)
+    # network(res, addlabel=True, add_relation_node=False)
