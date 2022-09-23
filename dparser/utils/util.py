@@ -9,13 +9,14 @@ from typing import List
 import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
-
+from copy import deepcopy
 
 
 
 
 # 初始schema
-BASE_SCHEMA = ['户型布局', '场所类', '局部', '风格类', '抽象风格', '家具物体', '组分', '色彩', '术语', '外形', '品牌']
+BASE_SCHEMA = ['户型布局', '场所类', '局部', '风格类', '抽象风格', '家具物体', '组分', '色彩', '术语', '外形', '品牌'] + \
+              ['面积', '费用', '属性', '观点倾向']
 
 # schema配对规则：
 Rules = [['户型类','风格类'], ['户型类','抽象风格'], ['户型类','场所类'], ['户型类','面积'],['户型类', '费用'], ['户型类','长'],['户型类','宽'], ['户型类','高'], \
@@ -41,6 +42,11 @@ def task_setting(kwe_cat:List, uie_cat:List, scheduler:int=1):
         else:
             return list(set(types).difference(set(st)))
 
+    def _rm(st:List, x:List):
+        if isinstance(x, str):
+            x = [x]
+        return [i for i in st if i not in x]
+
 
     def _legalizer(rule):
         """ 规则筛选 """
@@ -56,23 +62,30 @@ def task_setting(kwe_cat:List, uie_cat:List, scheduler:int=1):
         if all(x in all_cats for x in ['户型布局', '场所类', '家具物体', '风格类']):
             others = _diff(['户型布局', '场所类', '家具物体', '风格类'], all_cats)
             others = others if others else ['属性']
-            task_schema = [{'户型布局':'场所类'}, {'场所类': ['风格', '家具物体'] + others}, {'场所类': ['物体', '风格'] + others},
-                           {'家具物体': ['风格']+others}, {"户型布局": others}]
+            task_schema = [{'户型布局': '场所类'}, {'场所类': ['风格', '家具物体'] + others}, {'场所类': ['物体', '风格'] + others},
+                           {'家具物体': ['风格'] + _rm(others,['面积']) }, {"户型布局": others}]
+
+        elif all(x in all_cats for x in ['户型布局', '场所类', '家具物体']):
+            others = _diff(['户型布局', '场所类', '家具物体'], all_cats)
+            others = others if others else ['属性']
+            task_schema = [{'户型布局': ['空间', '物体'] + others}, {'家具物体': _rm(others,['面积'])}]
 
         elif all(x in all_cats for x in ['场所类', '家具物体', '风格类']):
             others = _diff(['场所类', '家具物体', '风格类'], all_cats)
             others = others if others else ['属性']
-            task_schema = [{'场所类':['风格', '物体']+others}, {'场所类': ['家具物体','风格']+others}, {'家具物体':others}]
+            task_schema = [{'场所类': ['风格', '物体'] + others}, {'家具物体': _rm(others,['面积'])}]
 
         elif all(x in all_cats for x in ['局部', '家具物体', '风格类']):
             others = _diff(['局部', '家具物体', '风格类'], all_cats)
             others = others if others else ['属性']
-            task_schema = [{'局部': ['风格', '物体'] + others}, {'局部': ['家具物体', '风格'] + others}, {'家具物体': others}]
+            task_schema = [{'局部': ['风格', '物体'] + others}, {'局部': ['家具物体', '风格'] + others}, {'家具物体': _rm(others,['面积'])}]
+
+
 
         elif all(x in all_cats for x in ['家具物体', '风格类']):
             others = _diff(['家具物体', '风格类'], all_cats)
             others = others if others else ['属性']
-            task_schema = [{'家具物体': ['风格'] + others}, {'家具物体': others}]
+            task_schema = [{'家具物体': ['风格'] + others}, {'家具物体': _rm(others,['面积'])}]
 
         else:
             for i, c1 in enumerate(all_cats):
@@ -114,11 +127,11 @@ def task_setting(kwe_cat:List, uie_cat:List, scheduler:int=1):
         all_cats.update(uie_cat)
         all_cats = list(all_cats)
 
-        if (any(x in all_cats for x in ['费用', '面积', '长', '宽', '高', '深'])) and '数量' in all_cats:
+        if (any(x in all_cats for x in ['费用', '面积', '长', '宽', '高', '深'])) and ('数量' in all_cats):
             all_cats = list(filter(lambda x: x != '数量', all_cats))
 
         Refence = ['户型布局', '场所类', '局部', '家具物体', '风格类', '抽象风格', '组分', '色彩', '术语', '外形', '品牌',
-                   '数量', '长', '宽', '高', '深', '品牌', '纹理']
+                   '费用', '面积', '长', '宽', '高', '深', '品牌', '纹理', '数量']
         all_cats = [x for x in Refence if x in all_cats]
 
         return all_cats
@@ -136,6 +149,7 @@ def task_setting(kwe_cat:List, uie_cat:List, scheduler:int=1):
         task_schema = BASE_SCHEMA
 
     return task_schema
+
 
 
 
