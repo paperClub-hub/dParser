@@ -79,7 +79,9 @@ class DDParser(object):
             "--model_files={}".format(model_files_path), "--config_path={}".format(self._get_abs_path('config.ini')),
             "--encoding_model={}".format(encoding_model)
         ]
-        self.custom_dict = self._get_abs_path('./model_files/custom_dict2.txt')
+        self.custom_dict = self._get_abs_path('model_files/custom_dict.txt')
+
+
         if use_cuda:
             args.append("--use_cuda")
         if tree:

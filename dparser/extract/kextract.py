@@ -1,127 +1,53 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Projecte : PyCharm
-# @Date     : 2022-09-20 16:50
+# @Date     : 2022-10-20 16:29
 # @Author   : NING MEI
 # @Desc     :
 
-"""
-关键词提取及关键词词类计算
-"""
 
-
-import os
-import jieba
-from ordered_set import OrderedSet
+from LAC import LAC
 from collections import defaultdict
-
-import warnings
-warnings.filterwarnings('ignore')
+from dparser.utils.util import templates, custom_dict_file
 
 
 
-class wordExtract():
+def text2words(text: str):
+    """ """
+    target_pos = ["户型","材质","形状","颜色","物体","品牌","风格","布局","纹理","空间","局部空间",
+                  # "人名", "地名", "作品名", "机构名",
+                  ]
 
-    """ 关键词提取及词类型获取"""
+    words = defaultdict(set)
+    ws, tags, weights = lac.run(text)
+    for w, t in zip(ws, tags):
+        if t in pos_dict and pos_dict.get(t) in target_pos:
+            words[pos_dict.get(t)].add(w)
 
-    def __init__(self):
-        self.dict_path = self._get_abs_path("../model_files/custom_dict2.txt")
-        self.jieba_path = self._get_abs_path("../model_files/jieba_dict.txt")
-        self.DICT = self._load_custom_dict()
-        if self.DICT: self.save_dict()
-        if os.path.exists(self.jieba_path): jieba.load_userdict(str(self.jieba_path))
-        self.stopwords = self._load_stopwords()
+    words = dict(words)
+    if words:
+        for k, v in words.items():
+            words[k]=list(v)
 
-    def _get_abs_path(self, path):
-        return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), path))
-
-    def _load_custom_dict(self):
-        """ 加载 lac自定义字典 """
-        # print('加载自定义词典... ')
-        label_dict = defaultdict(list)
-        with open(self.dict_path, 'r', encoding='utf-8') as f:
-            for line in f.readlines():
-                line = line.strip()
-                k, v = line.split('/')[-1].strip(), line.split('/')[0].strip()
-                label_dict[k].append(v)
-        label_dict = dict([k, sorted(v)] for k, v in label_dict.items())
-        return label_dict
-
-
-    def _load_stopwords(self):
-        try:
-            print("加载停止词... ")
-            stopwords = set()
-            dir = self._get_abs_path("../model_files/stopwords")
-            for sp in ['baidu_stopwords.txt', 'cn_stopwords.txt', \
-                       'hit_stopwords.txt', 'scu_stopwords.txt']:
-                with open(os.path.join(dir, sp), 'r') as f:
-                    stopwords.update([s.strip() for s in f.readlines() if s.strip()])
-            return list(stopwords)
-        except Exception:
-            return []
-
-
-    def save_dict(self):
-        """ 生成自定义jieba字典 """
-        label_set = OrderedSet()
-        all_labels = self.DICT.values()
-        for labels in all_labels:
-            for label in labels:
-                label_set.add(label)
-        print('\n'.join(label_set), file=open(self.jieba_path, 'w', encoding='utf-8'))
+    # print(words)
+    del ws, tags, weights
+    return words
 
 
 
-    def matched(self, text):
-        """ 行业词提取 及词类型匹配 """
+pos_dict = {}
+if not pos_dict:
+    pos_dict = templates.get("pos_dict")
 
-        def _match(text):
-            """ 自定义特殊分类词: 根据词出进行匹配 """
-            cost = "费用|价格|花费|人民币|RMB|万|W|元|块|花了|"
-            area = "面积|平米|平|m2|m²|cm|寸"
-            sizes = "长|宽|高|深|"  # 一对一字典
-
-            cats = set()
-            text = text.upper()
-            for string in [cost, area, sizes]:
-                one2one = True if string[0] == '长' else False
-                string = string.strip().strip("|").upper().split("|")
-                string_dict = dict([x, x] for x in string) if one2one else {string[0]: string}
-                out = list( filter(lambda x: x in text, list(string_dict.values()) if one2one \
-                            else list(string_dict.values())[0]))
-
-                if out:
-                    if one2one:
-                        cats.update([k for k, v in string_dict.items() if v in out])
-                    else:
-                        cats.update(string_dict.keys())
-
-            return list(cats)
-
-        CATS_DICT = {  # 自定义字典转化 ie 标签名
-            "STYLE": "风格类", "SPACE": "场所类", "LOSPACE": "局部", "OBJECT": "家具物体",
-            "SHAPE": "外形", "COLOR": "色彩", "MATERIAL": "组分", "PATTERN": "纹理",
-            "FEATURE": "属性", "BRAND": "品牌", "PROPTY": "户型布局",
-        }
-
-        tokens = jieba.lcut(text)
-        tokens = list(filter(lambda w: w not in self.stopwords, tokens))
-        matches = set([(t, c) for t in tokens for c, ns in self.DICT.items() if t in ns])
-        words = [x[0] for x in matches] if matches else []
-        res = [CATS_DICT.get(x[1], None) for x in matches if CATS_DICT.get(x[1], None)] if matches else []
-        res_defined = _match(text)
-        res.extend(res_defined)
-
-        return list(set(res)), list(set(words))
+lac = None
+if lac is None:
+    lac = LAC(mode="rank")
+    lac.load_customization(custom_dict_file)
 
 
-
+text = """邱德光畅谈绿城·盛世滨江四重空间所演绎的艺术生活“因为深知黄浦江与外滩对于上海这座城市的意义，所以在设计绿城·盛世滨江这样一线江景豪宅时，我们力图将最大的手笔留给滨江的视野。让室内、室外空间浑然天成，让客户透过270°的视角，感受最极致的江景。这是我的设计初衷，也是对黄浦江的敬意。”——邱德光2014年10月24日，一场以“巨匠·境界——邱德光畅谈滨江艺术人居”为主题的发布会在位于外滩世博滨江板块内的绿城·盛世滨江盛大召开。众多业内、媒体及文化艺术人士齐聚现场，与邱德光先生一同探讨申城滨江豪宅生活及设计理念。被誉为“新装饰主义大师”、“台湾设计界领军人物”的邱德光先生，纵横业界三十多年，专注室内空间中艺术细节和整体氛围的呈现，在世界各地均有知名豪宅项目由其设计打造。其中绿城·盛世滨江坐拥外滩一线江景，其于2014年8月起陆续推出的江景王座特邀邱德光先生倾力加盟，根据户型及景观面度身定制打造了四大精装样本，充分运用华丽、艺术、时尚元素以及接轨世界的巴洛克、Art Deco风格，塑造符合全球顶级人士尊贵身份的作品。首批Art Deco样板间开放首日，就吸引了千人的热情品鉴，销售业绩一路高涨，引发上海豪宅市场的高度关注，开盘当月销售金额就突破了亿。根据网上房地产相关数据，绿城·盛世滨江2014年以网签金额21亿的成绩稳居上海6万以上豪宅产品销售冠军。绿城·盛世滨江江景王座8月公开之后，9-10月份，陆续上海中心城区有多个滨江豪宅项目力邀邱德光先生加盟，业内甚至戏言，上海滨江豪宅进入了所谓“邱德光时间“。“作豪宅室内设计，最关键的就是帮客户把艺术在室内进行还原，让艺术家的感性与设计师的理性巧妙地融合在一起。而在这里，我让时尚·中国·艺术三大元素贯穿在绿城·盛世滨江室内的各个细节，让客户自然地被其感动。”“不同于之前的基调，这次在绿城·盛世滨江，我的设计语言更偏年轻化个性化，更符合目前豪宅客户发展的趋势。这是我非常满意的“邱德光甚至表示，无论是中国大陆，还是中国台湾，这可能是我所有作品里，我自己最想居住的地方。”发布会现场，绿城·盛世滨江项目总经理王喆先生表示，绿城·盛世滨江是融创绿城在上海最重要的项目之一，其本身外滩土地价值就不可估量，而这次邱大师的作品完美还原了土地的景观资源及文化艺术价值，达到了豪宅专家融创绿城最初的预期。据悉，本次发布会也宣告了邱德光定制的绿城·盛世滨江全新220-265平环幕江景大宅的公开，申城豪宅销冠2014年最后2个月的收官成绩无疑将引发业内的极大关注。 【项目二】：上海融创 盛世滨江 2501【设计者】：邱德光【参与者】： 杨尹赢、陈立筠【空间性质】：住宅【坐落位置】：上海市黄浦区中山南一路500弄【主要材料】：黑檀木皮、橡木染灰木皮、银白龙石材、珊瑚海石材、镀钛不锈钢、烤漆、明镜【面 积】：149㎡"""
 
 if __name__ == '__main__':
-    text = '三室一厅的毛坯房，108平米，装修预算40万，希望主卧独卫，客厅有L形沙发，厨房干湿分离，餐厅为红木餐桌。'
-    kwe = wordExtract()
-    types, ws = kwe.matched(text)
-    print(types)
-    print(kwe.stopwords)
+    print()
 
+    text2words(text)

@@ -6,14 +6,20 @@
 # @Desc     :
 
 
-"""
-dparser 关系抽提
-"""
+
+################################################################################
+#
+#  dparser 关系抽提, 基于DDParser。依存关系抽提 (dependency relation extract)
+#
+#################################################################################
+
+from typing import List, Union, Dict
+from dparser.run import DDParser
 
 
 
 class Node:
-    """Node class"""
+    """创建Node"""
     def __init__(self, id, word, parent, deprel, postag=None):
         self.lefts = []
         self.rights = []
@@ -747,6 +753,27 @@ class CoarseGrainedInfo(Tree):
 
 
 
+def ddrelation(text: Union[List[Dict], str], use_fine:bool=True):
+    """依存关系抽提 """
+
+    assert type(text) == str or type(text) == list, "text: 仅支持list、string"
+    if isinstance(text, str):
+        ddp_res = DDP.parse(text)
+        words = ddp_res[0]
+    else:
+        words = text
+
+    fine_res = FineGrainedInfo(words).parse() if use_fine else CoarseGrainedInfo(words).parse()
+
+    return fine_res
+
+
+
+DDP = None
+if DDP is None:
+    DDP = DDParser()
+
+
 if __name__ == '__main__':
 
     text = '我家客厅要装修成后现代风格的，88平米， 预算大概是4w+人民币。朋友家的卧室是北欧风格的，也差不多花了4w， 17平米。'
@@ -754,7 +781,6 @@ if __name__ == '__main__':
     ddp_res =  [{'word': ['我', '家', '客厅', '要', '装修', '成', '后现代风格', '的', '，', '88平米', '，', ' ', '预算', '大概', '是', '4w+', '人民币', '。', '朋友', '家', '的', '卧室', '是', '北欧风格', '的', '，', '也', '差不多', '花', '了', '4w', '，', ' ', '17平米', '。'], 'head': [2, 3, 5, 5, 10, 5, 8, 10, 8, 0, 10, 15, 15, 15, 10, 15, 15, 15, 20, 22, 20, 23, 10, 25, 23, 23, 29, 29, 10, 29, 29, 31, 34, 31, 29], 'deprel': ['ATT', 'ATT', 'SBV', 'ADV', 'ADV', 'CMP', 'ATT', 'SBV', 'MT', 'HED', 'MT', 'MT', 'SBV', 'ADV', 'IC', 'MT', 'VOB', 'MT', 'ATT', 'ATT', 'MT', 'SBV', 'IC', 'ATT', 'VOB', 'MT', 'ADV', 'ADV', 'IC', 'MT', 'VOB', 'MT', 'MT', 'COO', 'MT']}]
     # print(f"ddp_res: {ddp_res}")
 
+    fine_info = CoarseGrainedInfo(ddp_res[0])
     fine_info = FineGrainedInfo(ddp_res[0])
-    print("细粒度：", fine_info.parse())
-    # coarse_info = CoarseGrainedInfo(ddp_res[0])
-    # print("粗粒度：", coarse_info.parse())
+    print("fine_info: ", fine_info.parse())

@@ -7,7 +7,14 @@
 """
 
 name = 'dparser'
-version = "1.0.6"
-version_info = (1, 0, 6)
+version = "0.0.2"
+version_info = (0, 0, 2)
 
 from .run import DDParser
+from .extract.kextract import text2words
+from .extract.dextract import FineGrainedInfo, ddrelation
+from .extract.pextract import CASE_INFO
+from .extract.uextract import uie
+
+
+case_info = CASE_INFO()
