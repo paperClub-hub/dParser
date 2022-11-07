@@ -1,0 +1,5 @@
+paddlepaddle-gpu==2.3.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
+paddlenlp
+onnx
+onnxconverter_common
+onnxruntime-gpu

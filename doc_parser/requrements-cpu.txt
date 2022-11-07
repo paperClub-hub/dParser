@@ -1,0 +1,5 @@
+paddlepaddle
+paddlenlp
+onnx
+onnxconverter_common
+onnxruntime
