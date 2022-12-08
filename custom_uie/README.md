@@ -4,7 +4,7 @@
 
 
 `
-事先安装paddlepaddle-gpu
+安装paddlepaddle-gpu(paddlepaddle-gpu==2.4.0.post112)
 pip install --upgrade pip
 pip install  paddlenlp==2.4.2 -i https://mirrors.aliyun.com/pypi/simple/
 `
