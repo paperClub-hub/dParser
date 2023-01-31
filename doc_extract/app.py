@@ -10,10 +10,10 @@ import re
 import json
 import string
 from typing import (List, Dict, Tuple)
-from key_pharse.doc_extract.process.date_process import time_parser
-from key_pharse.doc_extract.process.area_process import area_process
-from key_pharse.doc_extract.process.cost_process import currency_process
-from key_pharse.doc_extract.process.location_process import location
+from process.date_process import time_parser
+from process.area_process import area_process
+from process.cost_process import currency_process
+from process.location_process import location
 from collections import defaultdict, OrderedDict
 
 from paddlenlp import Taskflow
@@ -489,4 +489,4 @@ if __name__ == '__main__':
     port = 5002
     import uvicorn
 
-    uvicorn.run(app='task_docment:app', host=ip, port=port, reload=True)
+    uvicorn.run(app='app:app', host=ip, port=port, reload=True)
