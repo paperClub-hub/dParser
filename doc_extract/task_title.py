@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# @Projecte : PyCharm
+# @Date     : 2023-01-31 12:30
+# @Author   : NING MEI
+# @Desc     :
+
+
+""" 文本标题信息抽提 """
 
 
 import re
-import json
 import string
-# sys.path.append("./uie_torch")
-# from uie_predictor import UIEPredictor
 from typing import (List, Dict, Tuple)
 from process.date_process import time_parser
 from process.area_process import area_process

@@ -5,6 +5,7 @@
 # @Author   : NING MEI
 # @Desc     :
 
+"""文章关键字信息抽提"""
 
 import re
 import json
